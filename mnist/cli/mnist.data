@@ -1,0 +1,14 @@
+predicates:
+  PredictedNumber/2: open
+  NeuralClassifier/2:
+    - open
+    - features: ../data/mnist/neuralclassifier_features.txt
+    - model: ../data/mnist/neuralclassifier_model.h5
+    - labels: ../data/mnist/neuralclassifier_labels.txt
+
+targets:
+  PredictedNumber : ../data/mnist/predictednumber_targets.txt
+  NeuralClassifier : ../data/mnist/neuralclassifier_targets.txt
+
+truth:
+  PredictedNumber : ../data/mnist/predictednumber_truth.txt
