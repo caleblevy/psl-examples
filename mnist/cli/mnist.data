@@ -2,9 +2,14 @@ predicates:
   PredictedNumber/2: open
   NeuralClassifier/2:
     - open
-    - features: ../data/mnist/neuralclassifier_features.txt
-    - model: ../data/mnist/neuralclassifier_model.h5
-    - labels: ../data/mnist/neuralclassifier_labels.txt
+    - modeltype: NeuralModel
+    - config:
+        features: ../data/mnist/neuralclassifier_features.txt
+        model: ../data/mnist/neuralclassifier_model_untrained.h5
+        labels: ../data/mnist/neuralclassifier_labels.txt
+
+observations:
+  PredictedNumber : ../data/mnist/predictednumber_obs.txt
 
 targets:
   PredictedNumber : ../data/mnist/predictednumber_targets.txt

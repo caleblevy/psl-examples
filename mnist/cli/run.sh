@@ -5,12 +5,18 @@
 # Ex: ./run.sh -D log4j.threshold=DEBUG
 
 readonly PSL_VERSION='2.3.0-SNAPSHOT'
-readonly JAR_PATH="./psl-cli-${PSL_VERSION}.jar"
+readonly JAR_PATH="./psl-neural-${PSL_VERSION}.jar"
 readonly FETCH_DATA_SCRIPT='../data/fetchData.sh'
 readonly BASE_NAME='mnist'
 
-readonly ADDITIONAL_PSL_OPTIONS=''
-readonly ADDITIONAL_EVAL_OPTIONS='--infer SGDInference --eval CategoricalEvaluator'
+readonly ADDITIONAL_PSL_OPTIONS="\
+    -D log4j.logger.org.nd4j.linalg.dataset=ERROR \
+    -D log4j.logger.org.deeplearning4j.nn=ERROR \
+    -D log4j.logger.org.nd4j.jita.allocator=ERROR \
+    -D log4j.logger.org.nd4j.jita.workspace=ERROERROR \
+    -D log4j.logger.org.nd4j.linalg.memory=ERROR \
+"
+readonly ADDITIONAL_EVAL_OPTIONS='--infer --eval CategoricalEvaluator'
 
 function main() {
    trap exit SIGINT
@@ -106,10 +112,10 @@ function fetch_file() {
 # Snapshots are fetched from the local maven repo and other builds are fetched remotely.
 function fetch_psl() {
    if [[ $PSL_VERSION == *'SNAPSHOT'* ]]; then
-      local snapshotJARPath="$HOME/.m2/repository/org/linqs/psl-cli/${PSL_VERSION}/psl-cli-${PSL_VERSION}.jar"
+      local snapshotJARPath="$HOME/.m2/repository/org/linqs/psl-neural/${PSL_VERSION}/psl-neural-${PSL_VERSION}.jar"
       cp "${snapshotJARPath}" "${JAR_PATH}"
    else
-      local remoteJARURL="https://repo1.maven.org/maven2/org/linqs/psl-cli/${PSL_VERSION}/psl-cli-${PSL_VERSION}.jar"
+      local remoteJARURL="https://repo1.maven.org/maven2/org/linqs/psl-neural/${PSL_VERSION}/psl-neural-${PSL_VERSION}.jar"
       fetch_file "${remoteJARURL}" "${JAR_PATH}" 'psl-jar'
    fi
 }

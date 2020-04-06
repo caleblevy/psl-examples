@@ -1,3 +1,5 @@
 1: NeuralClassifier(Image, Number) = PredictedNumber(Image, Number) ^2
 
 PredictedNumber(Image, +Number) = 1 .
+
+// 0.1: !PredictedNumber(Image, Number) ^2
