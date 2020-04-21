@@ -1,0 +1,12 @@
+1: NeuralClassifier(Image, Number) = PredictedNumber(Image, Number) ^2
+
+// Having all three variations maximizes the use of observed information.
+// Only having one of these rules can cause certain situations to not ground all possibilities.
+// For example if only using the first rule, then all cases where (Image3, Z) is observed will become trivial.
+1: Sequence(Image1, Image2, Image3) & PredictedNumber(Image1, X) & PredictedNumber(Image2, Y) & ModSum(X, Y, Z) -> PredictedNumber(Image3, Z) ^2
+1: Sequence(Image1, Image2, Image3) & PredictedNumber(Image2, Y) & PredictedNumber(Image3, Z) & ModSum(X, Y, Z) -> PredictedNumber(Image1, X) ^2
+1: Sequence(Image1, Image2, Image3) & PredictedNumber(Image3, Z) & PredictedNumber(Image1, X) & ModSum(X, Y, Z) -> PredictedNumber(Image2, Y) ^2
+
+PredictedNumber(Image, +Number) = 1 .
+
+// 0.1: !PredictedNumber(Image, Number) ^2
