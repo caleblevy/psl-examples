@@ -129,7 +129,6 @@ def writeData(model, trainImages, trainLabels, testImages, testLabels):
 
 def main():
     (trainImages, trainLabels), (testImages, testLabels) = loadData()
-    inputSize = len(trainImages[0])
 
     os.makedirs(DATA_DIR, exist_ok = True)
 
