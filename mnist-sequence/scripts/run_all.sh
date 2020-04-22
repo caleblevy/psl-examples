@@ -3,16 +3,16 @@
 # Grid search over hyperparams.
 
 readonly THIS_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-readonly BASE_OUT_DIR="${THIS_DIR}/results"
+readonly BASE_OUT_DIR="${THIS_DIR}/../results"
 
 readonly ADDITIONAL_PSL_OPTIONS='-D log4j.threshold=TRACE --postgres psl'
 
 readonly BATCH_SIZES='064'
-readonly LEARNING_RATES='00.01 00.10 01.00'
+readonly LEARNING_RATES='00.01 00.10 00.50 01.00 02.00'
 readonly EPOCHS=`seq -w 500 500 2000`
-readonly COMPUTE_PERIODS='010'
+readonly COMPUTE_PERIODS='010 020 050 100'
 readonly RULE_SETS='single triple'
-readonly ADMM_ITERATIONS=`seq -w 500 500 2000`
+readonly ADMM_ITERATIONS=`seq -w 500 500 2500`
 
 function run_psl() {
     local cliDir=$1
