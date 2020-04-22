@@ -43,9 +43,17 @@ function run_psl() {
     popd > /dev/null
 }
 
-function run_example() {
-    local cliDir="${THIS_DIR}"
+function run_split() {
+    local splitName=$1
+
+    local cliDir="${THIS_DIR}/../cli"
     local rulesPath="${cliDir}/mnist-sequence.psl"
+
+    # Pick out the initial split used by the .data files so we can reset it later.
+    local initialSplit=$(grep "data/mnist-sequence" "${cliDir}/mnist-sequence"*.data | sed 's#^.*/data/mnist-sequence/\([0-9_]\+\)/.*$#\1#' | head -n 1)
+
+    # Change the split.
+    sed -i "s#data/mnist-sequence/\([0-9_]\+\)/#data/mnist-sequence/${splitName}/#" "${cliDir}/mnist-sequence"*.data
 
     for batch in ${BATCH_SIZES}; do
         for learningRate in ${LEARNING_RATES}; do
@@ -82,17 +90,22 @@ function run_example() {
 
     # Reset the PSL file to no comments.
     sed -i 's/^### //' "${rulesPath}"
+
+    # Reset the data files back to the initial split.
+    sed -i "s#data/mnist-sequence/[0-9_]\\+#data/mnist-sequence/${initialSplit}#g" "${cliDir}/mnist-sequence"*.data
 }
 
 function main() {
-    if [[ ! $# -eq 0 ]]; then
-        echo "USAGE: $0"
+    if [[ $# -eq 0 ]]; then
+        echo "USAGE: $0 <split dir> ..."
         exit 1
     fi
 
     trap exit SIGINT
 
-    run_example
+    for splitDir in "$@"; do
+        run_split $(basename "${splitDir}")
+    done
 }
 
 [[ "${BASH_SOURCE[0]}" == "${0}" ]] && main "$@"

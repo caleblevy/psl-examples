@@ -6,18 +6,18 @@ predicates:
     - open
     - modeltype: NeuralModel
     - config:
-        features: ../data/mnist-sequence/neuralclassifier_features.txt
-        model: ../data/mnist-sequence/neuralclassifier_model_untrained.h5
-        labels: ../data/mnist-sequence/neuralclassifier_labels.txt
+        features: ../data/mnist-sequence/002_01000/neuralclassifier_features.txt
+        model: ../data/mnist-sequence/002_01000/neuralclassifier_model_untrained.h5
+        labels: ../data/mnist-sequence/002_01000/neuralclassifier_labels.txt
 
 observations:
-  PredictedNumber : ../data/mnist-sequence/predictednumber_obs.txt
-  Sequence : ../data/mnist-sequence/sequence_obs.txt
-  ModSum : ../data/mnist-sequence/modsum_obs.txt
+  PredictedNumber : ../data/mnist-sequence/002_01000/predictednumber_obs.txt
+  Sequence : ../data/mnist-sequence/002_01000/sequence_obs.txt
+  ModSum : ../data/mnist-sequence/002_01000/modsum_obs.txt
 
 targets:
-  PredictedNumber : ../data/mnist-sequence/predictednumber_targets.txt
-  NeuralClassifier : ../data/mnist-sequence/neuralclassifier_targets.txt
+  PredictedNumber : ../data/mnist-sequence/002_01000/predictednumber_targets.txt
+  NeuralClassifier : ../data/mnist-sequence/002_01000/neuralclassifier_targets.txt
 
 truth:
-  PredictedNumber : ../data/mnist-sequence/predictednumber_truth.txt
+  PredictedNumber : ../data/mnist-sequence/002_01000/predictednumber_truth.txt

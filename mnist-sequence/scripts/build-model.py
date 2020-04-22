@@ -4,6 +4,8 @@
 
 # TODO(eriq): Build a model that takes in all three images.
 
+import datetime
+import json
 import random
 import os
 
@@ -12,7 +14,10 @@ import tensorflow
 
 THIS_DIR = os.path.join(os.path.dirname(os.path.realpath(__file__)))
 
-DATA_DIR = os.path.abspath(os.path.join(THIS_DIR, '..', 'data', 'mnist-sequence'))
+# In this path, include the format string for trainingSamplesPerLabel and sequenceInstancesPerLabel.
+# All paths will need to make that substitution.
+DATA_DIR = os.path.abspath(os.path.join(THIS_DIR, '..', 'data', 'mnist-sequence', '{:03d}_{:05d}'))
+
 UNTRAINED_MODEL_PATH = os.path.join(DATA_DIR, 'neuralclassifier_model_untrained.h5')
 TRAINED_MODEL_PATH = os.path.join(DATA_DIR, 'neuralclassifier_model_trained.h5')
 FEATURES_PATH = os.path.join(DATA_DIR, 'neuralclassifier_features.txt')
@@ -23,6 +28,7 @@ PREDICTED_NUMBER_TARGETS_PATH = os.path.join(DATA_DIR, 'predictednumber_targets.
 PREDICTED_NUMBER_TRUTH_PATH = os.path.join(DATA_DIR, 'predictednumber_truth.txt')
 SEQUENCES_PATH = os.path.join(DATA_DIR, 'sequence_obs.txt')
 MODSUM_PATH = os.path.join(DATA_DIR, 'modsum_obs.txt')
+CONFIG_PATH = os.path.join(DATA_DIR, 'config.json')
 
 # This is also the order of the labels in the output layer.
 LABELS = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']
@@ -36,19 +42,20 @@ SIGNIFICANT_DIGITS = 4
 # We don't care if our pretrained model is very accurate.
 EPOCHS = 3
 
-# The approximate appearances of a label in all of the sequences.
-# Appearing twice in a sequence counts for two.
-NUM_SEQUENCE_INSTANCE_PER_LABEL = 100
-
 # The total number of images in the unlabeled set.
 # The sequences are built from this pool.
 NUM_TEST = 5000
 
-# TODO(eriq): Use several levels: 2, 5, 10, 20.
 # The number of training images per label.
-NUM_TRAINING_PER_LABEL = 2
+NUM_TRAINING_SAMPLES_PER_LABEL = [2, 5, 10, 20]
 
-SEED = 10
+# The approximate appearances of a label in all of the sequences.
+# Appearing twice in a sequence counts for two.
+NUM_SEQUENCE_INSTANCES_PER_LABEL = [10, 100, 1000, 10000]
+
+# We will keep cycling through the seeds if there are not enough.
+# None mean make a new seed (which may be determined by the previous seed).
+SEEDS = [None]
 
 def normalizeImages(images):
     (numImages, width, height) = images.shape
@@ -74,20 +81,20 @@ def loadData():
 
     return (allImages, allLabels)
 
-def getTraining(numImages, allLabels):
+def getTraining(numImages, allLabels, trainingSamplesPerLabel):
     indexes = []
     indexesSet = set()
 
     # {label: count, ...}
     counts = {label: 0 for label in range(len(LABELS))}
 
-    while (len(indexes) < (len(LABELS) * NUM_TRAINING_PER_LABEL)):
+    while (len(indexes) < (len(LABELS) * trainingSamplesPerLabel)):
         index = random.randrange(numImages)
         if (index in indexesSet):
             continue
 
         label = allLabels[index]
-        if (counts[label] >= NUM_TRAINING_PER_LABEL):
+        if (counts[label] >= trainingSamplesPerLabel):
             continue
         counts[label] += 1
 
@@ -114,7 +121,7 @@ def getTest(numImages, trainIndexes):
 # Get all the sequences of numbers.
 # A seqeunce will be of the form of a tuple of three indexes (indexing into the passed in lists).
 # Returns: [(xIndex, yIndex, zIndex), ...]
-def buildSequences(allLabels, testIndexes):
+def buildSequences(allLabels, testIndexes, sequenceInstancesPerLabel):
     # {label (int): [imageIndex, ...], ...}
     imagesByNumber = {label: [] for label in range(len(LABELS))}
 
@@ -130,7 +137,7 @@ def buildSequences(allLabels, testIndexes):
     seenSequences = set()
 
     sequences = []
-    while (len(sequences) < int((NUM_SEQUENCE_INSTANCE_PER_LABEL * len(LABELS) / 3))):
+    while (len(sequences) < int((sequenceInstancesPerLabel * len(LABELS) / 3))):
         # Sample x and y, compute z, then choose images for each digit.
         x = random.choices(labelIndexes, weights = samplingWeights)[0]
         y = random.choices(labelIndexes, weights = samplingWeights)[0]
@@ -193,7 +200,7 @@ def writeFile(path, data):
         for row in data:
             file.write('\t'.join([str(item) for item in row]) + "\n")
 
-def writeData(model, allImages, allLabels, trainIndexesSet, testIndexesSet, sequences):
+def writeData(model, allImages, allLabels, trainIndexesSet, testIndexesSet, sequences, trainingSamplesPerLabel, sequenceInstancesPerLabel):
     allIndexesSet = trainIndexesSet | testIndexesSet
 
     features = []
@@ -227,52 +234,90 @@ def writeData(model, allImages, allLabels, trainIndexesSet, testIndexesSet, sequ
         for j in range(len(LABELS)):
             modsum.append((i, j, (i + j) % len(LABELS)))
 
-    writeFile(FEATURES_PATH, features)
-    writeFile(NEURAL_CLASSIFIER_TARGETS_PATH, neuralTargets)
+    writeFile(FEATURES_PATH.format(trainingSamplesPerLabel, sequenceInstancesPerLabel), features)
+    writeFile(NEURAL_CLASSIFIER_TARGETS_PATH.format(trainingSamplesPerLabel, sequenceInstancesPerLabel), neuralTargets)
 
-    writeFile(PREDICTED_NUMBER_OBS_PATH, observations)
-    writeFile(PREDICTED_NUMBER_TARGETS_PATH, targets)
-    writeFile(PREDICTED_NUMBER_TRUTH_PATH, truths)
+    writeFile(PREDICTED_NUMBER_OBS_PATH.format(trainingSamplesPerLabel, sequenceInstancesPerLabel), observations)
+    writeFile(PREDICTED_NUMBER_TARGETS_PATH.format(trainingSamplesPerLabel, sequenceInstancesPerLabel), targets)
+    writeFile(PREDICTED_NUMBER_TRUTH_PATH.format(trainingSamplesPerLabel, sequenceInstancesPerLabel), truths)
 
-    writeFile(SEQUENCES_PATH, sequences)
-    writeFile(MODSUM_PATH, modsum)
+    writeFile(SEQUENCES_PATH.format(trainingSamplesPerLabel, sequenceInstancesPerLabel), sequences)
+    writeFile(MODSUM_PATH.format(trainingSamplesPerLabel, sequenceInstancesPerLabel), modsum)
 
-    writeFile(LABELS_PATH, LABELS)
+    writeFile(LABELS_PATH.format(trainingSamplesPerLabel, sequenceInstancesPerLabel), LABELS)
 
-def main():
-    random.seed(SEED)
+def buildDataset(seed, trainingSamplesPerLabel, sequenceInstancesPerLabel):
+    random.seed(seed)
 
     (allImages, allLabels) = loadData()
 
-    (trainIndexes, trainIndexesSet) = getTraining(len(allImages), allLabels)
+    (trainIndexes, trainIndexesSet) = getTraining(len(allImages), allLabels, trainingSamplesPerLabel)
     (testIndexes, testIndexesSet) = getTest(len(allImages), trainIndexes)
 
-    sequences = buildSequences(allLabels, testIndexes)
+    sequences = buildSequences(allLabels, testIndexes, sequenceInstancesPerLabel)
 
     (trainImages, trainLabels) = fetchImages(allImages, allLabels, trainIndexes)
     (testImages, testLabels) = fetchImages(allImages, allLabels, testIndexes)
 
-    os.makedirs(DATA_DIR, exist_ok = True)
+    os.makedirs(DATA_DIR.format(trainingSamplesPerLabel, sequenceInstancesPerLabel), exist_ok = True)
 
     inputSize = len(allImages[0])
     model = buildModel(inputSize)
-    model.save(UNTRAINED_MODEL_PATH)
+    model.save(UNTRAINED_MODEL_PATH.format(trainingSamplesPerLabel, sequenceInstancesPerLabel))
 
-    loss, accuracy = test(model, testImages, testLabels)
-    print("Untrained Model -- Loss: %f, Accuracy: %f" % (loss, accuracy))
+    untrainedLoss, untrainedAccuracy = test(model, testImages, testLabels)
+    print("Untrained Model (%d, %d) -- Loss: %f, Accuracy: %f" % (trainingSamplesPerLabel, sequenceInstancesPerLabel, untrainedLoss, untrainedAccuracy))
 
     model.fit(trainImages, trainLabels, epochs = EPOCHS)
-    model.save(TRAINED_MODEL_PATH)
+    model.save(TRAINED_MODEL_PATH.format(trainingSamplesPerLabel, sequenceInstancesPerLabel))
 
-    loss, accuracy = test(model, testImages, testLabels)
-    print("Trained Model -- Loss: %f, Accuracy: %f" % (loss, accuracy))
+    trainedLoss, trainedAccuracy = test(model, testImages, testLabels)
+    print("Trained ModeDataset (%d, %d) -- Loss: %f, Accuracy: %f" % (trainingSamplesPerLabel, sequenceInstancesPerLabel, trainedLoss, trainedAccuracy))
 
-    writeData(model, allImages, allLabels, trainIndexesSet, testIndexesSet, sequences)
+    writeData(model, allImages, allLabels, trainIndexesSet, testIndexesSet, sequences, trainingSamplesPerLabel, sequenceInstancesPerLabel)
 
-    pretrainedModel = tensorflow.keras.models.load_model(TRAINED_MODEL_PATH)
+    pretrainedModel = tensorflow.keras.models.load_model(TRAINED_MODEL_PATH.format(trainingSamplesPerLabel, sequenceInstancesPerLabel))
 
-    loss, accuracy = test(pretrainedModel, testImages, testLabels)
-    print("Pretrained Model -- Loss: %f, Accuracy: %f" % (loss, accuracy))
+    trainedLoss, trainedAccuracy = test(pretrainedModel, testImages, testLabels)
+    print("Pretrained Model (%d, %d) -- Loss: %f, Accuracy: %f" % (trainingSamplesPerLabel, sequenceInstancesPerLabel, trainedLoss, trainedAccuracy))
+
+    config = {
+        'network': {
+            'hiddenLayerSize': HIDDEN_LAYER_SIZE,
+            'hiddenLayerActivation': HIDDEN_ACTIVATION,
+            'outputActivation': OUTPUT_ACTIVATION,
+        },
+        'untrained': {
+            'loss': untrainedLoss,
+            'accuracy': untrainedAccuracy,
+        },
+        'pretrained': {
+            'epochs': EPOCHS,
+            'loss': trainedLoss,
+            'accuracy': trainedAccuracy,
+        },
+        'testSamples': NUM_TEST,
+        'trainingSamplesPerLabel': trainingSamplesPerLabel,
+        'sequenceInstanesPerLabel': sequenceInstancesPerLabel,
+        'seed': seed,
+        'timestamp': str(datetime.datetime.now()),
+    }
+
+    with open(CONFIG_PATH.format(trainingSamplesPerLabel, sequenceInstancesPerLabel), 'w') as file:
+        json.dump(config, file, indent = 4)
+
+def main():
+    random.seed()
+
+    count = 0
+    for trainingSamplesPerLabel in NUM_TRAINING_SAMPLES_PER_LABEL:
+        for sequenceInstancesPerLabel in NUM_SEQUENCE_INSTANCES_PER_LABEL:
+            seed = SEEDS[count % len(SEEDS)]
+            if (seed is None):
+                seed = random.randrange(2 ** 64)
+            count += 1
+
+            buildDataset(seed, trainingSamplesPerLabel, sequenceInstancesPerLabel)
 
 if (__name__ == '__main__'):
     main()
